@@ -3,30 +3,57 @@ class FSM {
      * Creates new FSM instance.
      * @param config
      */
-    constructor(config) {}
-
+    constructor(config) {
+        this.initial = config.initial;
+        this.states = config.states;
+        this.currentState = this.initial;
+        this.history = [this.initial];
+        this.step = 0;
+        this.direction = true;
+    }
     /**
      * Returns active state.
      * @returns {String}
      */
-    getState() {}
+    getState(){
+        return this.currentState;
+    }
 
     /**
      * Goes to specified state.
      * @param state
      */
-    changeState(state) {}
+    changeState(state) {
+        if (!this.states[state])  throw new SyntaxError ("there is no state");
+
+        if ((state !== this.history[this.step]) && this.history[this.step+1] && this.direction) {
+            this.history.splice(this.step+1);
+        }
+        if (!this.history[this.step+1] && this.history[this.step] !== state) {
+            this.step++;
+            this.history.push(state);
+            this.direction = true;
+        }
+        if (this.history[this.step+1] === state) ++this.step;
+        this.currentState = state;
+    }
 
     /**
      * Changes state according to event transition rules.
      * @param event
      */
-    trigger(event) {}
+    trigger(event) {
+        let state = this.states[this.currentState];
+        if (!state.transitions[event])  throw new SyntaxError ("there is no state");
+        this.changeState(state.transitions[event]);
+    }
 
     /**
      * Resets FSM state to initial.
      */
-    reset() {}
+    reset() {
+        this.currentState = this.initial;
+    }
 
     /**
      * Returns an array of states for which there are specified event transition rules.
@@ -34,28 +61,65 @@ class FSM {
      * @param event
      * @returns {Array}
      */
-    getStates(event) {}
+    getStates(event) {
+        let tempArr = Object.keys(this.states),
+            states = this.states;
+        if (!event) {
+            return tempArr;
+        } else {
+            let arr = [];
+            for (let i = 0; i < tempArr.length ; i++ ) {
+                for (let key in states[tempArr[i]].transitions){
+                    if (key === event) arr.push(tempArr[i]);
+                }
+            }
+            return arr;
+        }
+    }
 
     /**
      * Goes back to previous state.
      * Returns false if undo is not available.
      * @returns {Boolean}
      */
-    undo() {}
+    undo() {
+        if (this.step) {
+            this.direction = false;
+            --this.step;
+            this.changeState(this.history[this.step]);
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     /**
      * Goes redo to state.
      * Returns false if redo is not available.
      * @returns {Boolean}
      */
-    redo() {}
+    redo() {
+        if (this.step === this.history.length-1) {
+            return false;
+        } else {
+            this.direction = true;
+            ++this.step;
+            this.changeState(this.history[this.step]);
+            return true;
+        }
+    }
 
     /**
      * Clears transition history
      */
-    clearHistory() {}
+    clearHistory() {
+        this.history = [this.currentState];
+        this.step = 0;
+    }
 }
 
 module.exports = FSM;
 
 /** @Created by Uladzimir Halushka **/
+
+
