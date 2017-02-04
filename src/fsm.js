@@ -9,7 +9,6 @@ class FSM {
         this.currentState = this.initial;
         this.history = [this.initial];
         this.step = 0;
-        this.direction = true;
     }
     /**
      * Returns active state.
@@ -26,13 +25,9 @@ class FSM {
     changeState(state) {
         if (!this.states[state])  throw new SyntaxError ("there is no state");
 
-        if ((state !== this.history[this.step]) && this.history[this.step+1] && this.direction) {
-            this.history.splice(this.step+1);
-        }
         if (!this.history[this.step+1] && this.history[this.step] !== state) {
             this.step++;
             this.history.push(state);
-            this.direction = true;
         }
         if (this.history[this.step+1] === state) ++this.step;
         this.currentState = state;
@@ -45,6 +40,7 @@ class FSM {
     trigger(event) {
         let state = this.states[this.currentState];
         if (!state.transitions[event])  throw new SyntaxError ("there is no state");
+        this.history.splice(this.step+1);
         this.changeState(state.transitions[event]);
     }
 
@@ -84,7 +80,6 @@ class FSM {
      */
     undo() {
         if (this.step) {
-            this.direction = false;
             --this.step;
             this.changeState(this.history[this.step]);
             return true;
@@ -102,7 +97,6 @@ class FSM {
         if (this.step === this.history.length-1) {
             return false;
         } else {
-            this.direction = true;
             ++this.step;
             this.changeState(this.history[this.step]);
             return true;
